@@ -13,7 +13,7 @@
 void InitializeList(SimpleList *oList, long iMaxNum)
 {
     oList->maxNum = iMaxNum;
-    oList->listHead = (void**) malloc(iMaxNum * sizeof(void*));
+    oList->listHead = (void**) calloc(iMaxNum, sizeof(void*));
 }
 
 void* GetElementAt(SimpleList *iList, long iIndex)
