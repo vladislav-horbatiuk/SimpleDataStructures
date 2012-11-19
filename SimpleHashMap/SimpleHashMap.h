@@ -5,11 +5,11 @@
 //  Created by Vladyslav Gorbatiuk on 09.11.12.
 //
 //
-#include "SimpleList.h"
-#include "SimpleLinkedList.h"
 
 #ifndef _SimpleHashMap_h
 #define _SimpleHashMap_h
+
+#include "SimpleLinkedList.h"
 
 typedef struct
 {
@@ -19,14 +19,15 @@ typedef struct
 
 typedef struct
 {
-    SimpleList elements;
+    SimpleLinkedList  *elements;
     float loadFactor;
     unsigned long count;
+    unsigned long numberOfBuckets;
 } SimpleHashMap;
 
 /*
  */
-void InitHashMap(SimpleHashMap *iHashMap, unsigned long iNumOfElements);
+void InitHashMap(SimpleHashMap *oHashMap, unsigned long iNumOfElements, unsigned int iKeyLength);
 
 /*
  */

@@ -60,6 +60,6 @@ void DisposeLinkedList(SimpleLinkedList *oList)
         free(current->element);
         tmp = current;
         current = current->next;
-        free(current);
+        free(tmp);
     }
 }
