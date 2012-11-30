@@ -58,8 +58,7 @@ void DisposeLinkedList(SimpleLinkedList *oList)
     tLinkedListElement *tmp;
     while (current) {
         free(current->element);
-        tmp = current;
-        current = current->next;
+        current = (tmp=current)->next;
         free(tmp);
     }
 }

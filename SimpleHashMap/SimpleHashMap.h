@@ -20,18 +20,17 @@ typedef struct
 typedef struct
 {
     SimpleLinkedList  *elements;
-    float loadFactor;
-    unsigned long count;
-    unsigned long numberOfBuckets;
+    unsigned long count, numberOfBuckets;
+    int *_coeffs, _coeffsCount;
 } SimpleHashMap;
 
 /*
  */
-void InitHashMap(SimpleHashMap *oHashMap, unsigned long iNumOfElements, unsigned int iKeyLength);
+int InitHashMap(SimpleHashMap *oHashMap, unsigned long iNumOfElements, unsigned int iKeyLength);
 
 /*
  */
-int AddElementToHashMap(SimpleHashMap *iHashMap, const char *iElementID, void *iElement);
+int AddElementToHashMapWithoutChecks(SimpleHashMap *iHashMap, const char *iElementID, void *iElement);
 
 /*
  */

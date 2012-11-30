@@ -14,61 +14,77 @@
 
 #define MAX_RAND 256
 
-static float increment;
-static int *coeffs;
-static unsigned int coeffsCount;
 
-unsigned long hashFunc(const char *iElementID, unsigned long iCount);
+unsigned long hashFunc(SimpleHashMap *ioHashMap, const char *iElementID, unsigned long iCount);
 
-inline void _initCoeffs(unsigned int iCoeffsCount)
+inline void _initCoeffs(SimpleHashMap *oHashMap, unsigned int iCoeffsCount)
 {
-    coeffsCount = iCoeffsCount;
-    coeffs = malloc(iCoeffsCount * sizeof(int));
-    if (!coeffs) printf("Coeffs error..\n");
+    oHashMap->_coeffsCount = iCoeffsCount;
+    oHashMap->_coeffs = malloc(iCoeffsCount * sizeof(int));
+    if (!oHashMap->_coeffs) printf("Coeffs malloc error..\n");
     int i;
-    for (i = 0; i < iCoeffsCount; ++i) coeffs[i] = rand() % MAX_RAND;
+    for (i = 0; i < iCoeffsCount; ++i) oHashMap->_coeffs[i] = rand() % MAX_RAND;
 }
 
-void InitHashMap(SimpleHashMap *oHashMap, unsigned long iNumOfElements, unsigned int iKeyLength)
+int InitHashMap(SimpleHashMap *oHashMap, unsigned long iNumOfElements, unsigned int iKeyLength)
 {
     srand( time(NULL) );
     oHashMap->numberOfBuckets = iNumOfElements * 2 - 1;
-    oHashMap->elements = malloc(sizeof(SimpleLinkedList) * oHashMap->numberOfBuckets);
-    if (!oHashMap->elements) printf("oHashMap->elements error..\n");
-    oHashMap->loadFactor = oHashMap->count = 0;
-    _initCoeffs(iKeyLength);
-    increment = 1.0 / oHashMap->numberOfBuckets;
+    oHashMap->elements = calloc(sizeof(SimpleLinkedList), oHashMap->numberOfBuckets);
+    if (!oHashMap->elements) { printf("Calloc of hashmap elements array failed..\n"); return -1; }
+    oHashMap->count = 0;
+    _initCoeffs(oHashMap, iKeyLength);
+    return 0;
 }
 
-int AddElementToHashMap(SimpleHashMap *oHashMap, const char *iElementID, void *iElement)
+int AddElementToHashMapWithoutChecks(SimpleHashMap *oHashMap, const char *iElementID, void *iElement)
 {
     tHashMapElement *newElement = malloc(sizeof(tHashMapElement));
     if (!newElement) return -1;
     newElement->elementID = iElementID; newElement->element = iElement;
-    unsigned long index = hashFunc(iElementID, oHashMap->numberOfBuckets);
+    unsigned long index = hashFunc(oHashMap, iElementID, oHashMap->numberOfBuckets);
     printf("Element will be added at index:%ld\n", index);
+    /* Currently not needed
     if (oHashMap->elements[index].head == NULL) InitLinkedList(&oHashMap->elements[index]);
+     */
     if (AddElementToLinkedList(&oHashMap->elements[index], newElement) == -1) return -1;
     oHashMap->count++;
-    oHashMap->loadFactor += increment;
     return 0;
 }
 
-unsigned long hashFunc(const char *iElementID, unsigned long iCount)
+void* GetElementInHashMapByID(SimpleHashMap *iHashMap, const char *iElementID)
+{
+    /* The length of iElementID is greater than the length  of any key in iHashMap - hence, definitely no element will match - return NULL. */
+    if (strlen(iElementID) > iHashMap->_coeffsCount) return NULL;
+    /*Since if we are here, length of searched key is definetely <= max length of key in the iHashMap, the 'hashFunc' function won't change iHashMap.*/
+    unsigned long index = hashFunc(iHashMap, iElementID, iHashMap->numberOfBuckets);
+    
+    SimpleLinkedList elementsAtIndex = iHashMap->elements[index];
+    
+    tLinkedListElement* current = elementsAtIndex.head;
+    while (current && strcmp((char*)((tHashMapElement*)current->element)->elementID, iElementID)) {
+        current = current->next;
+    }
+    
+    if (current) return ((tHashMapElement*)current->element)->element;
+    else return NULL;
+}
+
+unsigned long hashFunc(SimpleHashMap *ioHashMap, const char *iElementID, unsigned long iCount)
 {
     int i;
     unsigned long result = 0;
     unsigned int keyLength = strlen(iElementID);
-    if (coeffsCount < keyLength) {
-        coeffs = realloc(coeffs, keyLength * sizeof(int));
-        if (!coeffs) printf("coeffs2 error..\n");
-        while (coeffsCount < keyLength) {
-            coeffs[coeffsCount] = rand() % MAX_RAND;
-            coeffsCount++;
+    if (ioHashMap->_coeffsCount < keyLength) {
+        ioHashMap->_coeffs = realloc(ioHashMap->_coeffs, keyLength * sizeof(int));
+        if (!ioHashMap->_coeffs) printf("Error during memory allocation for hash function coefficients..\n");
+        while (ioHashMap->_coeffsCount < keyLength) {
+            ioHashMap->_coeffs[ioHashMap->_coeffsCount] = rand() % MAX_RAND;
+            ioHashMap->_coeffsCount++;
         }
     }
     for (i = 0; i < keyLength; ++i) {
-        result += iElementID[i] * coeffs[i];
+        result += iElementID[i] * ioHashMap->_coeffs[i];
         result %= iCount;
     }
     return result;
@@ -106,7 +122,7 @@ int main()
             element = malloc(sizeof(long));
             if (!element) printf("element error\n");
             *element = input;
-            if (!AddElementToHashMap(&aMap, (const char*) elementID, element))
+            if (!AddElementToHashMapWithoutChecks(&aMap, (const char*) elementID, element))
                 printf("Added new element successfully\n");
             else { printf("Failed to add element, probably memory problems...\n"); break; }
                 
@@ -115,13 +131,11 @@ int main()
         {
             printf("Enter element ID:\n");
             scanf("%s", strInp);
-            unsigned long index = hashFunc((const char*) strInp, aMap.numberOfBuckets);
-            /*
-             TODO: This won't obviously work when two keys hash to the same bucket - so we will need to implement GetElementInHashMapAt function thoroughly.
-             */
-            tHashMapElement *HMelement = (tHashMapElement*) aMap.elements[index].head->element;
-            element = (long*)HMelement->element;
-            printf("Element is:%ld\n", *element);
+            element = (long*) GetElementInHashMapByID(&aMap, strInp);
+            if (element)
+                printf("Element is:%ld\n", *element);
+            else
+                printf("No element with such key.\n");
         }
 
     }

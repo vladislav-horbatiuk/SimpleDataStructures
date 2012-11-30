@@ -24,9 +24,8 @@ int main()
     while (1) {
         printf("Enter new element to add, 0 to exit:\n");
         scanf("%ld", &input);
-        if (!input) {
+        if (!input)
             break;
-        }
         element = (long*)malloc(sizeof(long));
         *element = input;
         if (!AddElementToLinkedList(&linkedList, element))
