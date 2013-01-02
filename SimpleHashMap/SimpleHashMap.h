@@ -30,7 +30,7 @@ int InitHashMap(SimpleHashMap *oHashMap, unsigned long iNumOfElements, unsigned 
 
 /*
  */
-int AddElementToHashMapWithoutChecks(SimpleHashMap *iHashMap, const char *iElementID, void *iElement);
+int AddElementToHashMapWithoutChecks(SimpleHashMap *oHashMap, const char *iElementID, void *iElement);
 
 /*
  */
@@ -38,5 +38,9 @@ void* GetElementInHashMapByID(SimpleHashMap *iHashMap, const char *iElementID);
 
 /*
  */
-void DisposeHashMap(SimpleHashMap *iHashMap);
+int AddOrReplaceElementInHashMap(SimpleHashMap *oHashMap, const char *iElementID, void *iElement);
+
+/*
+ */
+void DisposeHashMap(SimpleHashMap *oHashMap);
 #endif

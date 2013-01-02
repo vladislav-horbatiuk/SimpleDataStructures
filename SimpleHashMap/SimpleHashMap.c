@@ -26,6 +26,15 @@ inline void _initCoeffs(SimpleHashMap *oHashMap, unsigned int iCoeffsCount)
     for (i = 0; i < iCoeffsCount; ++i) oHashMap->_coeffs[i] = rand() % MAX_RAND;
 }
 
+inline int _createNewElement(tHashMapElement **oNewElement, const char *iElementID, void *iElement)
+{
+    *oNewElement = malloc(sizeof(tHashMapElement));
+    if (!*oNewElement)
+        return -1;
+    (*oNewElement)->elementID = iElementID; (*oNewElement)->element = iElement;
+    return 0;
+}
+
 int InitHashMap(SimpleHashMap *oHashMap, unsigned long iNumOfElements, unsigned int iKeyLength)
 {
     srand( time(NULL) );
@@ -39,9 +48,8 @@ int InitHashMap(SimpleHashMap *oHashMap, unsigned long iNumOfElements, unsigned 
 
 int AddElementToHashMapWithoutChecks(SimpleHashMap *oHashMap, const char *iElementID, void *iElement)
 {
-    tHashMapElement *newElement = malloc(sizeof(tHashMapElement));
-    if (!newElement) return -1;
-    newElement->elementID = iElementID; newElement->element = iElement;
+    tHashMapElement *newElement;
+    if (_createNewElement(&newElement, iElementID, iElement)) return -1;
     unsigned long index = hashFunc(oHashMap, iElementID, oHashMap->numberOfBuckets);
     printf("Element will be added at index:%ld\n", index);
     /* Currently not needed
@@ -49,6 +57,37 @@ int AddElementToHashMapWithoutChecks(SimpleHashMap *oHashMap, const char *iEleme
      */
     if (AddElementToLinkedList(&oHashMap->elements[index], newElement) == -1) return -1;
     oHashMap->count++;
+    return 0;
+}
+
+int AddOrReplaceElementInHashMap(SimpleHashMap *oHashMap, const char *iElementID, void *iElement)
+{
+    tHashMapElement *newElement;
+    if (_createNewElement(&newElement, iElementID, iElement)) return -1;
+    unsigned long index = hashFunc(oHashMap, iElementID, oHashMap->numberOfBuckets);
+    printf("Element will be added at index:%ld\n", index);
+    tLinkedListElement *current = oHashMap->elements[index].head;
+    /*
+     Advance iterator while we haven't reached end of the list and the current element ID differs from the inserted one
+     */
+    while (current && strcmp(((tHashMapElement*) current->element)->elementID, iElementID))
+        current = current->next;
+    
+    /*
+     If no element with similar ID was found - insert new element in list.
+     */
+    if (!current) {
+        if (AddElementToLinkedList(&oHashMap->elements[index], newElement))
+            return -1;
+        oHashMap->count++;
+    }
+    else
+    {
+        /*
+         Replace existing element with the inserted one.
+         */
+        (tHashMapElement*) current->element = newElement;
+    }
     return 0;
 }
 
@@ -90,7 +129,7 @@ unsigned long hashFunc(SimpleHashMap *ioHashMap, const char *iElementID, unsigne
     return result;
 }
 
-void DisposeHashMap(SimpleHashMap *oMap)
+void DisposeHashMap(SimpleHashMap *oHashMap)
 {
     
 }
@@ -122,7 +161,7 @@ int main()
             element = malloc(sizeof(long));
             if (!element) printf("element error\n");
             *element = input;
-            if (!AddElementToHashMapWithoutChecks(&aMap, (const char*) elementID, element))
+            if (!AddOrReplaceElementInHashMap(&aMap, (const char*) elementID, element))
                 printf("Added new element successfully\n");
             else { printf("Failed to add element, probably memory problems...\n"); break; }
                 
