@@ -10,9 +10,10 @@
 #include <stdlib.h>
 #include "SimpleList.h"
 
-void InitializeList(SimpleList *oList, long iMaxNum)
+void InitList(SimpleList *oList, long iMaxNum)
 {
     oList->maxNum = iMaxNum;
+    oList->currentNum = 0;
     oList->listHead = (void**) calloc(iMaxNum, sizeof(void*));
 }
 
@@ -50,6 +51,23 @@ void AddElement(SimpleList *oList, void *iElement)
         }
         AddElement(oList, iElement);
     }
+}
+
+void* PopAt(SimpleList *oList, long iIndex)
+{
+    if (iIndex < oList->currentNum)
+    {
+        void *toReturn = oList->listHead[iIndex];
+        --oList->currentNum;
+
+        while (iIndex < oList->currentNum)
+        {
+            oList->listHead[iIndex] = oList->listHead[iIndex+1];
+            iIndex++;
+        }
+        return toReturn;
+    }
+    return NULL;
 }
 
 void DisposeList(SimpleList *oList)

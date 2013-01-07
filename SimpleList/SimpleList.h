@@ -15,13 +15,15 @@ typedef struct {
     long maxNum;
 } SimpleList;
 
-void InitializeList(SimpleList*, long);
+void InitList(SimpleList*, long);
 
 void* GetElementAt(SimpleList*, long);
 
 void SetElementAt(SimpleList*, long, void*);
 
 void AddElement(SimpleList*, void*);
+
+void* PopAt(SimpleList*, long);
 
 void DisposeList(SimpleList*);
 #endif
