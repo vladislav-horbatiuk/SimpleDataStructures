@@ -35,5 +35,5 @@ int main()
         }
         else { printf("Failed to add element, probably memory problems..."); break; }
     }
-    DisposeLinkedList(&linkedList);
+    DisposeLinkedListAndElements(&linkedList);
 }
