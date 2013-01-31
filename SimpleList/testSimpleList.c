@@ -24,7 +24,7 @@ int main()
         }
         if (input < 0)
         {
-            void *removedElement = PopAt(&aList, -input));
+            void *removedElement = PopAt(&aList, -input);
             if (removedElement) free(removedElement);
         }
         else
