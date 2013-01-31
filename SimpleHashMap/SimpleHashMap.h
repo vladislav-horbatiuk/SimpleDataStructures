@@ -22,6 +22,7 @@ typedef struct
     SimpleLinkedList  *elements;
     unsigned long count, numberOfBuckets;
     int *_coeffs, _coeffsCount;
+    SimpleLinkedList IDs;
 } SimpleHashMap;
 
 /*
@@ -42,5 +43,5 @@ int AddOrReplaceElementInHashMap(SimpleHashMap *oHashMap, const char *iElementID
 
 /*
  */
-void DisposeHashMap(SimpleHashMap *oHashMap);
+int DisposeHashMapWithIDs(SimpleHashMap *);
 #endif
