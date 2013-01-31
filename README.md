@@ -8,3 +8,4 @@ Currently, it includes such data structures:
 2. List (aka vector in C++).
 3. Hash map.
 4. Heap.
+5. Graph.
