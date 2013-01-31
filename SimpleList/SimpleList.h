@@ -9,21 +9,25 @@
 #ifndef _SimpleList_h
 #define _SimpleList_h
 
+#define SCALE_FACTOR 2
+
 typedef struct {
     void **listHead;
     long currentNum;
     long maxNum;
 } SimpleList;
 
-void InitList(SimpleList*, long);
+int InitList(SimpleList*, long);
 
 void* GetElementAt(SimpleList*, long);
 
 void SetElementAt(SimpleList*, long, void*);
 
-void AddElement(SimpleList*, void*);
+int AddElement(SimpleList*, void*);
 
 void* PopAt(SimpleList*, long);
 
-void DisposeList(SimpleList*);
+int DisposeListWithElements(SimpleList*);
+
+void TraverseAndDisposeList(SimpleList*, void (*) (void*));
 #endif
