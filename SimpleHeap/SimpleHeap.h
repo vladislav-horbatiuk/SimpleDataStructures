@@ -30,11 +30,15 @@ typedef struct
 
 int InitHeap(SimpleHeap*, long);
 
-int AddElementToHeap(SimpleHeap*, double, void*);
+int AddElementToHeap(SimpleHeap*, double, void*, void (*) (void*, long));
 
-void* ExtractMinElement(SimpleHeap*);
+tHeapElement* ExtractMinElement(SimpleHeap*, void (*) (void*, long));
 
-void* LookupMinElement(SimpleHeap*);
+tHeapElement* LookupMinElement(SimpleHeap*);
 
-int DisposeHeap(SimpleHeap*);
+tHeapElement* PopHeapElementAtIndex(SimpleHeap*, long, void (*) (void*, long));
+
+int DisposeHeapWithElements(SimpleHeap*);
+
+int DisposeOnlyHeapMemory(SimpleHeap*);
 #endif

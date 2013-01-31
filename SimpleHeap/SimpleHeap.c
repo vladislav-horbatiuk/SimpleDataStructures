@@ -8,81 +8,137 @@
 #include "SimpleHeap.h"
 #include <stdlib.h>
 
+static inline void GoUpFromIndex(SimpleList*, long, void (*) (void*, long));
+static inline void GoDownFromIndex(SimpleList*, long, void (*) (void*, long));
+
+
 int InitHeap(SimpleHeap *oHeap, long iCount)
 {
 	InitList(&oHeap->elements, iCount);
 }
 
-int AddElementToHeap(SimpleHeap *oHeap, double iKey, void *iElement)
+
+int AddElementToHeap(SimpleHeap *oHeap, double iKey, void *iElement, void (*updateFunc) (void*, long))
 {
 	SimpleList *elements = &oHeap->elements;
 	tHeapElement *newElement = malloc(1 * sizeof(tHeapElement));
+	if (!newElement)
+		return -1;
 	newElement->key = iKey; newElement->element = iElement;
-	AddElement(elements, newElement);
-	long currentIndex = elements->currentNum - 1;
-	while (currentIndex > 0)
-	{
-		long parentIndex = PARENT(currentIndex);
-		tHeapElement *parent = HEAP_ELEMENT(GetElementAt(elements, parentIndex));
-		tHeapElement *current = HEAP_ELEMENT(GetElementAt(elements, currentIndex));
-		if (parent->key < current->key)
-			break;
-		SetElementAt(elements, currentIndex, parent);
-		SetElementAt(elements, parentIndex, current);
-		currentIndex = parentIndex;
-	}
+	if (AddElement(elements, newElement))
+		return -1;
+	GoUpFromIndex(elements, elements->currentNum - 1, updateFunc);
 	return 0;
 }
 
-void* ExtractMinElement(SimpleHeap *oHeap)
+
+tHeapElement* ExtractMinElement(SimpleHeap *oHeap, void (*updateFunc) (void*, long))
 {
-	long currentIndex = 0;
+	return PopHeapElementAtIndex(oHeap, 0, updateFunc);
+}
+
+
+tHeapElement* LookupMinElement(SimpleHeap *iHeap)
+{
+	return HEAP_ELEMENT(GetElementAt(&iHeap->elements, 0));
+}
+
+
+tHeapElement* PopHeapElementAtIndex(SimpleHeap *oHeap, long iIndex, void (*updateFunc) (void*, long))
+{
 	SimpleList *elements = &oHeap->elements;
 	long elementsCount = elements->currentNum;
-	if (!elementsCount)
+	if (iIndex < 0 || iIndex >= elementsCount)
 		return NULL;
-	void *returnValue = GetElementAt(elements, currentIndex);
-	tHeapElement *last = PopAt(elements, elementsCount - 1);
+	tHeapElement *returnValue = HEAP_ELEMENT(GetElementAt(elements, iIndex));
+	tHeapElement *last = HEAP_ELEMENT(PopAt(elements, elementsCount - 1));
 	elementsCount--;
-	if (elementsCount)
+	if (elementsCount > iIndex)
 	{
-		SetElementAt(elements, currentIndex, last);
-
-		int stop;
-		long leftChildInd, rightChildInd, swapInd;
-		double rightChildKey, leftChildKey, currentKey = last->key;
-
-		while ((leftChildInd = LEFT_CHILD(currentIndex)) < elementsCount)
-		{
-			stop = 1;
-			leftChildKey = HEAP_ELEMENT(GetElementAt(elements, leftChildInd))->key;
-			rightChildKey = DBL_MAX;
-			if ((rightChildInd = RIGHT_CHILD(currentIndex)) < elementsCount)
-				stop = (rightChildKey = HEAP_ELEMENT(GetElementAt(elements, rightChildInd))->key) > currentKey;
-			stop = stop && (leftChildKey > currentKey);
-			if (stop)
-				break;
-			swapInd = (leftChildKey < rightChildKey) ? leftChildInd : rightChildInd;
-			tHeapElement *toSwap = HEAP_ELEMENT(GetElementAt(elements, swapInd));
-			SetElementAt(elements, currentIndex, toSwap);
-			SetElementAt(elements, swapInd, last);
-			currentIndex = swapInd;
-		}
+		SetElementAt(elements, iIndex, last);
+		long parent = PARENT(iIndex);
+		if (parent < iIndex && HEAP_ELEMENT(GetElementAt(elements, parent))->key > last->key)
+			GoUpFromIndex(elements, iIndex, updateFunc);
+		else
+			GoDownFromIndex(elements, iIndex, updateFunc);
 	}
 	return returnValue;
 }
 
-void* LookupMinElement(SimpleHeap *iHeap)
-{
-	return GetElementAt(&iHeap->elements, 0);
-}
 
-int DisposeHeap(SimpleHeap *oHeap)
+int DisposeHeapWithElements(SimpleHeap *oHeap)
 {
 	long i = 0;
 	tHeapElement *current = HEAP_ELEMENT(GetElementAt(&oHeap->elements, i));
 	for (; current!=NULL; current=GetElementAt(&oHeap->elements, ++i))
 		free(current->element);
-	DisposeList(&oHeap->elements);
+	DisposeListWithElements(&oHeap->elements);
 	return 0;
+}
+
+int DisposeOnlyHeapMemory(SimpleHeap *oHeap)
+{
+	DisposeListWithElements(&oHeap->elements);
+	return 0;
+}
+
+static inline void GoUpFromIndex(SimpleList *oHeapElements, long iIndex, void (*updateFunc) (void*, long))
+{
+	tHeapElement *current = HEAP_ELEMENT(GetElementAt(oHeapElements, iIndex));
+	if (updateFunc)
+	{
+		updateFunc(current->element, iIndex);
+	}
+	double currentKey = current->key;
+	while (iIndex > 0)
+	{
+		long parentIndex = PARENT(iIndex);
+		tHeapElement *parent = HEAP_ELEMENT(GetElementAt(oHeapElements, parentIndex));
+		if (parent->key < currentKey)
+			break;
+		SetElementAt(oHeapElements, iIndex, parent);
+		SetElementAt(oHeapElements, parentIndex, current);
+		if (updateFunc)
+		{
+			updateFunc(current->element, parentIndex);
+			updateFunc(parent->element, iIndex);
+		}
+		iIndex = parentIndex;
+	}
+}
+
+
+static inline void GoDownFromIndex(SimpleList *oHeapElements, long iIndex, void (*updateFunc) (void*, long))
+{
+		int stop;
+		long leftChildInd, rightChildInd, swapInd, elementsCount = oHeapElements->currentNum;
+		tHeapElement *toSwap, *current = HEAP_ELEMENT(GetElementAt(oHeapElements, iIndex));
+		double rightChildKey, leftChildKey, currentKey = current->key;
+
+		if (updateFunc)
+		{
+			updateFunc(current->element, iIndex);
+		}
+
+		while ((leftChildInd = LEFT_CHILD(iIndex)) < elementsCount)
+		{
+			stop = 1;
+			leftChildKey = HEAP_ELEMENT(GetElementAt(oHeapElements, leftChildInd))->key;
+			rightChildKey = DBL_MAX;
+			if ((rightChildInd = RIGHT_CHILD(iIndex)) < elementsCount)
+				stop = (rightChildKey = HEAP_ELEMENT(GetElementAt(oHeapElements, rightChildInd))->key) > currentKey;
+			stop = stop && (leftChildKey > currentKey);
+			if (stop)
+				break;
+			swapInd = (leftChildKey < rightChildKey || rightChildInd >= elementsCount) ? leftChildInd : rightChildInd;
+			toSwap = HEAP_ELEMENT(GetElementAt(oHeapElements, swapInd));
+			SetElementAt(oHeapElements, iIndex, toSwap);
+			SetElementAt(oHeapElements, swapInd, current);
+			if (updateFunc)
+			{
+				updateFunc(current->element, swapInd);
+				updateFunc(toSwap->element, iIndex);
+			}
+			iIndex = swapInd;
+		}
 }
