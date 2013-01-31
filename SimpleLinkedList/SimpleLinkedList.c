@@ -10,10 +10,16 @@
 #include <stdlib.h>
 #include "SimpleLinkedList.h"
 
-void InitLinkedList(SimpleLinkedList *oList)
+
+static inline void _setEverythingTo0(SimpleLinkedList *oList)
 {
     oList->head = oList->tail = NULL;
     oList->count = 0;
+}
+
+void InitLinkedList(SimpleLinkedList *oList)
+{
+    _setEverythingTo0(oList);
 }
 
 int AddElementToLinkedList(SimpleLinkedList *oList, void *iElement)
@@ -52,7 +58,7 @@ void TraverseLinkedListElementsUsingFunc(SimpleLinkedList *iList, void (*iFunc)(
     }
 }
 
-void DisposeLinkedList(SimpleLinkedList *oList)
+void DisposeLinkedListAndElements(SimpleLinkedList *oList)
 {
     tLinkedListElement *current = oList->head;
     tLinkedListElement *tmp;
@@ -61,4 +67,17 @@ void DisposeLinkedList(SimpleLinkedList *oList)
         current = (tmp=current)->next;
         free(tmp);
     }
+    _setEverythingTo0(oList);
+}
+
+void TraverseAndDisposeLinkedList(SimpleLinkedList *oList, void (*iFunc)(void*))
+{
+    tLinkedListElement *current = oList->head;
+    tLinkedListElement *tmp;
+    while (current) {
+        iFunc(current->element);
+        current = (tmp=current)->next;
+        free(tmp);
+    }
+    _setEverythingTo0(oList);
 }

@@ -61,5 +61,10 @@ void TraverseLinkedListElementsUsingFunc(SimpleLinkedList *iList, void (*iFunc)(
  INPUTS:
  -oList - pointer to the SimpleLinkedList structure to be disposed.
  */
-void DisposeLinkedList(SimpleLinkedList *oList);
+void DisposeLinkedListAndElements(SimpleLinkedList *oList);
+
+/*
+*/
+void TraverseAndDisposeLinkedList(SimpleLinkedList *oList, void (*iFunc)(void*));
+
 #endif
