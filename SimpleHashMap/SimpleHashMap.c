@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-#include "SimpleHashMap.h"
+#include "SimpleDataStructures/SimpleHashMap/SimpleHashMap.h"
 
 #define MAX_RAND 256
 

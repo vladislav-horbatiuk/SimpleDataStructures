@@ -6,7 +6,7 @@
 //
 //
 
-#include "SimpleGraph.h"
+#include "SimpleDataStructures/SimpleGraph/SimpleGraph.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

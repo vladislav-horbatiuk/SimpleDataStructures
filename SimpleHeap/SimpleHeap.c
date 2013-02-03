@@ -5,7 +5,7 @@
 //  Created by Vladyslav Gorbatiuk on 02.01.13.
 //
 //
-#include "SimpleHeap.h"
+#include "SimpleDataStructures/SimpleHeap/SimpleHeap.h"
 #include <stdlib.h>
 
 static inline void GoUpFromIndex(SimpleList*, long, void (*) (void*, long));

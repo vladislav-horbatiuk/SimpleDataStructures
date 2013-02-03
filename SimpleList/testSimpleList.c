@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "SimpleList.c"
+#include "SimpleDataStructures/SimpleList/SimpleList.h"
 
 int main()
 {
@@ -39,6 +39,6 @@ int main()
         }
         printf("\n");
     }
-    DisposeList(&aList);
+    DisposeListWithElements(&aList);
     return 0;
 }

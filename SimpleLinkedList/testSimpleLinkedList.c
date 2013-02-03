@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "SimpleLinkedList.h"
+#include "SimpleDataStructures/SimpleLinkedList/SimpleLinkedList.h"
 
 void printFunc(void *iElement)
 {

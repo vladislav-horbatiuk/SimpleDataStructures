@@ -9,7 +9,7 @@
 #ifndef _SimpleHashMap_h
 #define _SimpleHashMap_h
 
-#include "SimpleLinkedList.h"
+#include "SimpleDataStructures/SimpleLinkedList/SimpleLinkedList.h"
 
 typedef struct
 {

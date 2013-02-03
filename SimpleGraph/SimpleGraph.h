@@ -8,9 +8,9 @@
 
 #ifndef _SimpleGraph_h
 #define _SimpleGraph_h
-#include "SimpleList.h"
-#include "SimpleHeap.h"
-#include "SimpleHashMap.h"
+#include "SimpleDataStructures/SimpleList/SimpleList.h"
+#include "SimpleDataStructures/SimpleHeap/SimpleHeap.h"
+#include "SimpleDataStructures/SimpleHashMap/SimpleHashMap.h"
 
 #define VERTEX_PTR(x) ((tVertex*) x)
 #define EDGE_PTR(x) ((tEdge*) x)

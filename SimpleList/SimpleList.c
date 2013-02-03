@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "SimpleList.h"
+#include "SimpleDataStructures/SimpleList/SimpleList.h"
 
 int InitList(SimpleList *oList, long iMaxNum)
 {

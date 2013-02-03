@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "SimpleLinkedList.h"
+#include "SimpleDataStructures/SimpleLinkedList/SimpleLinkedList.h"
 
 
 static inline void _setEverythingTo0(SimpleLinkedList *oList)

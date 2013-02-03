@@ -14,7 +14,7 @@
 #define RIGHT_CHILD(x) (2*x + 2)
 #define HEAP_ELEMENT(x) ((tHeapElement*) x)
 
-#include "SimpleList.h"
+#include "SimpleDataStructures/SimpleList/SimpleList.h"
 #include "float.h"
 
 typedef struct 

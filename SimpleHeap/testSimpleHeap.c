@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "SimpleHeap.h"
+#include "SimpleDataStructures/SimpleHeap/SimpleHeap.h"
 
 int main()
 {
