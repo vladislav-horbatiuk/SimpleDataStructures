@@ -6,8 +6,8 @@
 //
 //
 
-#include <stdio.h>
 #include <stdlib.h>
+
 #include "SimpleDataStructures/SimpleList/SimpleList.h"
 
 int InitList(SimpleList *oList, long iMaxNum)
@@ -41,7 +41,8 @@ int AddElement(SimpleList *oList, void *iElement)
         oList->listHead[oList->currentNum] = iElement;
         ++oList->currentNum;
     }
-    else {
+    else 
+    {
         void **temporaryHead = (void**) realloc(oList->listHead, oList->maxNum * SCALE_FACTOR * sizeof(void*));
         if (!temporaryHead)
             return -1;
@@ -76,6 +77,12 @@ int DisposeListWithElements(SimpleList *oList)
     {
         free(oList->listHead[i]);
     }
+    free(oList->listHead);
+    return 0;
+}
+
+int DisposeListMemoryOnly(SimpleList *oList)
+{
     free(oList->listHead);
     return 0;
 }

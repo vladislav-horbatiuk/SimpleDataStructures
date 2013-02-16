@@ -29,5 +29,7 @@ void* PopAt(SimpleList*, long);
 
 int DisposeListWithElements(SimpleList*);
 
+int DisposeListMemoryOnly(SimpleList *oList);
+
 void TraverseAndDisposeList(SimpleList*, void (*) (void*));
 #endif
