@@ -9,6 +9,7 @@ Currently, it includes such data structures:
  - Hash map.
  - Heap.
  - Graph.
+ - Union-find.
 
 The repository structure goes as follows:
  - /makeScripts - contains all needed makeScripts. The most
