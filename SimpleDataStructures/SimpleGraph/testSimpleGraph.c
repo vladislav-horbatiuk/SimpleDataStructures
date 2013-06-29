@@ -8,31 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "SimpleGraph.h"
-
-int readGraphFromFile(char *iFileName, SimpleGraph *oGraph)
-{
-    long i;
-    FILE *aFile = fopen(iFileName, "r");
-    if (!aFile)
-        return -1;
-    long vertNum, edgeNum, currSource, currDest, *element;
-    double currCost;
-    fscanf(aFile, "%ld %ld", &vertNum, &edgeNum);
-    InitGraph(oGraph, vertNum, edgeNum);
-    for (i = 0; i < vertNum; ++i)
-    {
-        element = malloc(1*sizeof(long));
-        *element = i + 1;
-        AddVertexWithData(oGraph, element, 10);
-    }
-    for (i = 0; i < edgeNum; ++i)
-    {
-        fscanf(aFile, "%ld %ld %lf", &currSource, &currDest, &currCost);
-        AddEdge(oGraph, currSource - 1, currDest - 1, currCost);
-    }
-    return 0;
-}
+#include "SimpleDataStructures/SimpleGraph/SimpleGraph.h"
 
 int main()
 {
@@ -92,7 +68,7 @@ int main()
                 for (i = 0;i < elements.currentNum; ++i)
                 {
                     currEdge = EDGE_PTR(GetElementAt(&elements, i));
-                    printf("Source vertex data:%ld, dest vertex data:%ld, edge cost=%lf\n", *((long*) currEdge->source->data), *((long*) currEdge->dest->data), currEdge->cost);                    
+                    PrintEdgeInfo(currEdge);
                 }
             }
             else
@@ -104,7 +80,7 @@ int main()
             printf("Enter file name:\n");
             scanf("%s", strInp);
             SimpleGraph fileGraph;
-            if (readGraphFromFile(strInp, &fileGraph))
+            if (ReadGraphFromFile(strInp, &fileGraph))
             { printf("Incorrect file name.\n"); continue; }
 
             SimpleGraph MST;
@@ -115,7 +91,7 @@ int main()
             for (i = 0; i < elements.currentNum; ++i)
             {   
                 currEdge = EDGE_PTR(GetElementAt(&elements, i));
-                printf("Source vertex data:%ld, dest vertex data:%ld, edge cost=%lf\n", *(long*)currEdge->source->data, *(long*)currEdge->dest->data, currEdge->cost);
+                PrintEdgeInfo(currEdge);
             }
             DisposeGraphWithVerticesData(&fileGraph);
             DisposeGraphMemoryOnly(&MST);
@@ -123,19 +99,13 @@ int main()
         }
 
         printf("Current graph vertices and edges:\n");
-        printf("VERTICES:\n");
-        elements = aGraph.vertices;
-        for (i = 0; i < elements.currentNum; ++i)
-        {
-            currVertex = VERTEX_PTR(GetElementAt(&elements, i));
-        	printf("Index:%ld, data:%ld\n", i, *((long*)currVertex->data));
-        }
+        printf("VERTICES number:%ld\n", aGraph.vertices.currentNum);
         printf("EDGES:\n");
         elements = aGraph.edges;
         for (i = 0; i < elements.currentNum; ++i)
         {   
             currEdge = EDGE_PTR(GetElementAt(&elements, i));
-            printf("Source vertex data:%ld, dest vertex data:%ld, edge cost=%lf\n", *((long*) currEdge->source->data), *((long*) currEdge->dest->data), currEdge->cost);
+            PrintEdgeInfo(currEdge);
         }
     }
     DisposeGraphWithVerticesData(&aGraph);

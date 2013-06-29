@@ -7,9 +7,6 @@
 //
 
 #include "SimpleDataStructures/SimpleGraph/SimpleGraph.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 inline void _updateVertex(void*, long);
 static inline void _updateAdjacentVerticesInHeap(tVertex*, long, SimpleHashMap*, SimpleHeap*);
@@ -35,7 +32,7 @@ int InitGraph(SimpleGraph *oGraph, long iVerticesNum, long iEdgesNum)
 	int res = InitList(&oGraph->vertices, iVerticesNum);
 	res = res || InitList(&oGraph->edges, iEdgesNum);
 	if (res)
-		return -1;
+		return MALLOC_ERROR;
 	return 0;
 }
 
@@ -43,13 +40,14 @@ int AddVertexWithData(SimpleGraph *oGraph,void *iData, long iEdgesNum)
 {
 	tVertex *newVertex = malloc(1 * sizeof(tVertex));
 	if (!newVertex)
-		return -1;
+		return MALLOC_ERROR;
 	newVertex->data = iData;
 	newVertex->_heapIndex = newVertex->_sourceVertexIndex = UNSET_VALUE;
 	if (InitList(&newVertex->edges, iEdgesNum))
-		return -1;
+		return MALLOC_ERROR;
+	newVertex->vertexIndex = oGraph->vertices.currentNum;
 	if (AddElement(&oGraph->vertices, newVertex))
-		return -1;
+		return MALLOC_ERROR;
 	return 0;
 }
 
@@ -174,6 +172,77 @@ static inline void _updateAdjacentVerticesInHeap(tVertex *iSourceVertex, long iS
 inline void _updateVertex(void *oVertex, long iNewIndex)
 {
 	VERTEX_PTR(oVertex)->_heapIndex = iNewIndex;
+}
+
+int ReadGraphFromFile(char *iFileName, SimpleGraph *oGraph)
+{
+    long i, errorCode = 0;
+    FILE *aFile = fopen(iFileName, "r");
+    if (!aFile)
+        return FILE_OPEN_ERROR;
+
+    long vertNum, edgeNum, currSource, currDest, *element;
+    double currCost;
+
+    /* Read number of vertices and edges from file */
+    if (fscanf(aFile, "%ld %ld", &vertNum, &edgeNum) != 2)
+    {
+    	errorCode = INCONSISTENT_FILE;
+    	goto CLOSE;
+    }
+    if (InitGraph(oGraph, vertNum, edgeNum) != 0)
+    {
+    	errorCode = MALLOC_ERROR;
+    	goto CLOSE;
+    }
+    /* Add vertices to graph */
+    for (i = 0; i < vertNum; ++i)
+    {
+        if (AddVertexWithData(oGraph, NULL, DEFAULT_EDGES_NUMBER) != 0)
+        {
+        	errorCode = MALLOC_ERROR;
+        	goto DISPOSE_AND_CLOSE;
+	    }
+    }
+    for (i = 0; i < edgeNum; ++i)
+    {
+        if (fscanf(aFile, "%ld %ld %lf", &currSource, &currDest, &currCost) != 3)
+        {
+        	errorCode = INCONSISTENT_FILE;
+        	goto DISPOSE_AND_CLOSE;
+        }
+        AddEdge(oGraph, currSource - 1, currDest - 1, currCost);
+    }
+    goto CLOSE;
+
+    DISPOSE_AND_CLOSE:
+    DisposeGraphMemoryOnly(oGraph);
+
+    CLOSE:
+    fclose(aFile);
+
+    return errorCode;
+}
+
+double* ShortestPathUsingDijkstra(SimpleGraph *iGraph, long iSourceVertexIndex)
+{
+	return NULL;
+}
+
+double* ShortestPathUsingBellmanFord(SimpleGraph *iGraph, long iSourceVertexIndex, int *oFoundNegativeCycle)
+{
+	return NULL;
+}
+
+double* AllPairsShortestPath(SimpleGraph *iGraph)
+{
+	return NULL;
+}
+
+inline void PrintEdgeInfo(tEdge* iEdge)
+{
+    printf("Source vertex index:%ld, dest vertex index:%ld, edge cost=%lf\n",
+    iEdge->source->vertexIndex, iEdge->dest->vertexIndex, iEdge->cost);
 }
 
 int DisposeGraphWithVerticesData(SimpleGraph *oGraph)
