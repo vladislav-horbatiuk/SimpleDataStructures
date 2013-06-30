@@ -22,6 +22,8 @@
 #define EDGE_PTR(x) ((tEdge*) x)
 #define UNSET_VALUE -1
 #define DEFAULT_EDGES_NUMBER 10
+#define DIRECTIONAL 1
+#define UNDIRECTIONAL 0
 
 typedef struct
 {
@@ -29,7 +31,18 @@ typedef struct
 	SimpleList edges;
 	long vertexIndex;
 	long _heapIndex;
-	long _sourceVertexIndex;
+	/* Used in greedy criterion search, stores the index of a vertex,
+	 * that led to this one.
+	 */
+	long _prevVertexInd;
+	/* Used in greedy criterion search, stores the cost of an edge,
+	 * that led to this vertexx.
+	 */
+	double _edgeCost;
+	/* Used in Dijkstra shortest-path algorithm - stores shortest path
+	 * to a given vertex from the source vertex.
+	 */
+	double _pathLength;
 } tVertex;
 
 typedef struct
@@ -69,10 +82,14 @@ double MinimumSpanningTree(SimpleGraph*, SimpleGraph*);
 	INPUTS:
 	-iFileName - name of the file, containing graph.
 	-oGraph - pointer to the SimpleGraph structure.
+	-iDirect - 0 if graph in file is undirectional and
+	each edge is mentioned only once (i.e. there is a
+	line "1 2 C1" but there is no line "2 1 C1"; any 
+	other number otherwise (if graph is directional).
 	RETURNS:
 	- 0, if everything went well, error code otherwise.
 */
-int ReadGraphFromFile(char *iFileName, SimpleGraph *oGraph);
+int ReadGraphFromFile(char *iFileName, SimpleGraph *oGraph, int iDirect);
 
 /*
 	USAGE NOTES:

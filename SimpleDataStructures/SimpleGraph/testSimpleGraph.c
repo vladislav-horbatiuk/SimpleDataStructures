@@ -80,12 +80,11 @@ int main()
             printf("Enter file name:\n");
             scanf("%s", strInp);
             SimpleGraph fileGraph;
-            if (ReadGraphFromFile(strInp, &fileGraph))
+            if (ReadGraphFromFile(strInp, &fileGraph, UNDIRECTIONAL))
             { printf("Incorrect file name.\n"); continue; }
 
             SimpleGraph MST;
             double result = MinimumSpanningTree(&fileGraph, &MST);
-            printf("The total sum of edges cost in MST:%lf\n", result);
             printf("MST EDGES:\n");
             elements = fileGraph.edges;
             for (i = 0; i < elements.currentNum; ++i)
@@ -93,13 +92,14 @@ int main()
                 currEdge = EDGE_PTR(GetElementAt(&elements, i));
                 PrintEdgeInfo(currEdge);
             }
+            printf("The total sum of edges cost in MST:%lf\n", result);
             DisposeGraphWithVerticesData(&fileGraph);
             DisposeGraphMemoryOnly(&MST);
             continue;
         }
 
         printf("Current graph vertices and edges:\n");
-        printf("VERTICES number:%ld\n", aGraph.vertices.currentNum);
+        printf("VERTICES number:%ld.\n", aGraph.vertices.currentNum);
         printf("EDGES:\n");
         elements = aGraph.edges;
         for (i = 0; i < elements.currentNum; ++i)
