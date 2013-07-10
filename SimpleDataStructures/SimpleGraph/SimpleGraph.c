@@ -42,6 +42,11 @@ static inline double _addNewVertexToFrontier(SimpleHeap*,double (*) (tEdge*),
 static inline long _addVertexAndEdgeToFrontier(SimpleGraph*, tVertex*,
 	void (*) (tEdge*));
 
+static inline double _pathLength(tEdge *iEdge)
+{
+	return iEdge->cost + iEdge->source->_pathLength;
+}
+
 static inline void _freeVertexData(void *iVertex)
 {
 	tVertex *vertexToFree = VERTEX_PTR(iVertex);
@@ -62,12 +67,12 @@ static double _edgeCostCriterion(tEdge *iEdge)
 
 static double _pathLengthCriterion(tEdge *iEdge)
 {
-	return iEdge->cost + iEdge->source->_pathLength;
+	return _pathLength(iEdge);
 }
 
 static void _DijkstraUpdateFunc(tEdge* iEdge)
 {
-	iEdge->dest->_pathLength = iEdge->source->_pathLength + iEdge->cost;
+	iEdge->dest->_pathLength = _pathLength(iEdge);
 }
 
 int InitGraph(SimpleGraph *oGraph, long iVerticesNum, long iEdgesNum)
@@ -86,7 +91,7 @@ int AddVertexWithData(SimpleGraph *oGraph,void *iData, long iEdgesNum)
 		return MALLOC_ERROR;
 	newVertex->data = iData;
 	newVertex->_heapIndex = newVertex->_prevVertexInd = UNSET_VALUE;
-	newVertex->_edgeCost = newVertex->_pathLength = 0;
+	newVertex->_edgeCost = newVertex->_pathLength = DBL_MAX;
 
 	if (InitList(&newVertex->edges, iEdgesNum))
 		return MALLOC_ERROR;
@@ -120,12 +125,6 @@ int AddEdge(SimpleGraph *oGraph, long iSourceVertexInd, long iDestVertexInd, dou
 		PopAt(&oGraph->edges, oGraph->edges.currentNum - 1);
 		errorCode = MALLOC_ERROR;
 		goto END;
-	}
-	if (AddElement(&dest->edges, newEdge))
-	{
-		PopAt(&oGraph->edges, oGraph->edges.currentNum - 1);
-		PopAt(&source->edges, source->edges.currentNum - 1);
-		errorCode = MALLOC_ERROR;
 	}
 	END:
 	if (errorCode != 0)
@@ -192,7 +191,22 @@ int ReadGraphFromFile(char *iFileName, SimpleGraph *oGraph, int iDirect)
 
 double* ShortestPathUsingDijkstra(SimpleGraph *iGraph, long iSourceVertexIndex)
 {
-	return NULL;
+	double *shortestPaths = malloc(iGraph->vertices.currentNum * sizeof(double));
+	if (shortestPaths == NULL)
+		return NULL;
+
+	SimpleGraph shortestPathGraph;
+	_GreedyCriterionSearch(iGraph, iSourceVertexIndex, &_pathLengthCriterion,
+						&_DijkstraUpdateFunc, &shortestPathGraph);
+
+	long i;
+	for (i = 0; i < shortestPathGraph.vertices.currentNum; ++i)
+	{
+		tVertex *currentVertex = GetElementAt(&shortestPathGraph.vertices, i);
+		shortestPaths[currentVertex->vertexIndex] = currentVertex->_pathLength;
+		currentVertex->vertexIndex = i;
+	}
+	return shortestPaths;
 }
 
 double* ShortestPathUsingBellmanFord(SimpleGraph *iGraph, long iSourceVertexIndex, int *oFoundNegativeCycle)
@@ -217,6 +231,12 @@ static inline double _GreedyCriterionSearch(SimpleGraph *iGraph,long iStartInd,
 
 	SimpleHeap verticesRest;
 	_fillHeapWithVertices(vertices, &verticesRest, iStartInd);
+
+	/* Hack, since this routine is supposed to be general, while _pathLength
+	 * internal field is used only by Dijkstra algorithm. But this is the
+	 * easiest way to make it work for now.
+	 */
+	VERTEX_PTR(GetElementAt(vertices, iStartInd))->_pathLength = 0;
 
 	do
 	{
@@ -272,27 +292,35 @@ static inline long _addVertexAndEdgeToFrontier(SimpleGraph *oGraph,
 {
 	AddVertexWithData(oGraph, iNewVertex->data, iNewVertex->edges.currentNum);
 	long newVertexInd = oGraph->vertices.currentNum - 1;
+	if (newVertexInd > 0 && (iNewVertex->_prevVertexInd != UNSET_VALUE))
+	{
+		/* Add a corresponding edge (if it isn't the first added vertex, i.e. its
+		 * index is > 0).
+		 */
+		AddEdge(oGraph, iNewVertex->_prevVertexInd, newVertexInd, 
+			iNewVertex->_edgeCost);
+		if (updateFunc != NULL)
+		{
+			/* Update vertex info needed for particular greedy search algorithm,
+			 * using passed in function pointer updateFunc (for instance, Dijkstra
+			 * algorithm would remember a shortest path length to iNewVertex).
+			 */
+			tEdge fictitiousEdge;
+			fictitiousEdge.source = 
+				GetElementAt(&oGraph->vertices, iNewVertex->_prevVertexInd);
+			fictitiousEdge.dest = iNewVertex;
+			fictitiousEdge.cost = iNewVertex->_edgeCost;
+			updateFunc(&fictitiousEdge);
+		}
+	}
+
+	tVertex *insertedVertex = GetElementAt(&oGraph->vertices, newVertexInd);
 	/* Set the vertex index of newly inserted vertex to the old one, so that
 	 * we can find a correspondence between vertices in new "backbone" graph
 	 * and vertices in the input graph.
 	 */
-	VERTEX_PTR(GetElementAt(&oGraph->vertices, newVertexInd))->vertexIndex = 
-		iNewVertex->vertexIndex;
-	/* Add a corresponding edge (if it isn't the first added vertex, i.e. its
-	 * index is > 0).
-	 */
-	if (newVertexInd > 0 && (iNewVertex->_prevVertexInd != UNSET_VALUE))
-	{
-		AddEdge(oGraph, iNewVertex->_prevVertexInd, newVertexInd, 
-			iNewVertex->_edgeCost);
-		/* Update vertex info needed for particular greedy search algorithm,
-		 * using passed in function pointer updateFunc (for instance, Dijkstra
-		 * algorithm would remember a shortest path length to iNewVertex).
-		 */
-		if (updateFunc != NULL)
-			updateFunc(EDGE_PTR(GetElementAt(&oGraph->edges,
-				oGraph->edges.currentNum - 1)));
-	}
+	insertedVertex->vertexIndex = iNewVertex->vertexIndex;
+	insertedVertex->_pathLength = iNewVertex->_pathLength;
 
 	return newVertexInd;
 }
@@ -308,9 +336,6 @@ static inline void _updateAdjacentVerticesInHeap(tVertex *iNewVertex,
 	for (i = 0; i < iNewVertex->edges.currentNum; ++i)
 	{
 		currentEdge = GetElementAt(&iNewVertex->edges, i);
-		if (currentEdge->source != iNewVertex)
-			/* Incoming edge, while we need outgoing */
-			continue;
 		adjacentVertex = currentEdge->dest;
 		if (adjacentVertex->_heapIndex == UNSET_VALUE)
 			/* Vertex not in the heap - no need to update */
@@ -318,11 +343,18 @@ static inline void _updateAdjacentVerticesInHeap(tVertex *iNewVertex,
 		heapElementToUpdate = 
 			PopHeapElementAtIndex(oVerticesRest, adjacentVertex->_heapIndex,
 								&_updateVertex);
-		VERTEX_PTR(heapElementToUpdate->element)->_prevVertexInd = iNewInd;
-		VERTEX_PTR(heapElementToUpdate->element)->_edgeCost = currentEdge->cost;
-		AddElementToHeap(oVerticesRest, 
-						MIN(heapElementToUpdate->key, criterion(currentEdge)),
+		
+		double criterionValue = criterion(currentEdge);
+		if (heapElementToUpdate->key > criterionValue)
+		{
+			VERTEX_PTR(heapElementToUpdate->element)->_prevVertexInd = iNewInd;
+			VERTEX_PTR(heapElementToUpdate->element)->_edgeCost = currentEdge->cost;
+			AddElementToHeap(oVerticesRest, criterionValue,
 						heapElementToUpdate->element, &_updateVertex);
+		}
+		else
+			AddElementToHeap(oVerticesRest, heapElementToUpdate->key,
+						heapElementToUpdate->element, &_updateVertex);	
 		free(heapElementToUpdate);
 	}	
 }

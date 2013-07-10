@@ -28,6 +28,7 @@
 typedef struct
 {
 	void *data;
+	/* For now stores only outgoing edges */
 	SimpleList edges;
 	long vertexIndex;
 	long _heapIndex;
@@ -36,7 +37,7 @@ typedef struct
 	 */
 	long _prevVertexInd;
 	/* Used in greedy criterion search, stores the cost of an edge,
-	 * that led to this vertexx.
+	 * that led to this vertex.
 	 */
 	double _edgeCost;
 	/* Used in Dijkstra shortest-path algorithm - stores shortest path

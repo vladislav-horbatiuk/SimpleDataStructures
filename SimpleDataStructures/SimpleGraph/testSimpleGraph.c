@@ -26,9 +26,11 @@ int main()
         printf("2. Add edge.\n");
         printf("3. Get incident edges for vertex.\n");
         printf("4. Find the MST of a graph from file.\n");
-        printf("5. Exit.\n");
+        printf("5. Find the shortest paths using Dijkstra algorithm\
+ (works only for graphs with non-negative weights).\n");
+        printf("6. Exit.\n");
         scanf("%ld", &input);
-        if (input == 5) {
+        if (input == 6) {
             break;
         }
         if (1 == input)
@@ -92,12 +94,36 @@ int main()
                 currEdge = EDGE_PTR(GetElementAt(&elements, i));
                 PrintEdgeInfo(currEdge);
             }
-            printf("The total sum of edges cost in MST:%lf\n", result);
+            printf("The total sum of edges cost in MST:%lg\n", result);
             DisposeGraphWithVerticesData(&fileGraph);
             DisposeGraphMemoryOnly(&MST);
             continue;
         }
-
+        else if (5 == input)
+        {
+            printf("Enter starting vertex index:\n");
+            scanf("%ld", &input);
+            if (input < 0 || input > (aGraph.vertices.currentNum - 1))
+            {
+                 printf("Index out of bounds..\n");
+                 continue;
+            }
+            double *shortestPaths = ShortestPathUsingDijkstra(&aGraph, input);
+            if (!shortestPaths)
+            {
+                printf("Something went wrong during Dijkstra algorithm..\n");
+                continue;
+            }
+            printf("Shortest paths starting from vertex at index %ld \
+(%lg means infinity - no path):\n", input, DBL_MAX);
+            double minPath = DBL_MAX;
+            for (i = 0; i < aGraph.vertices.currentNum; ++i)
+            {
+                printf("%lg ", shortestPaths[i]);
+            }
+            printf("\n");
+            free(shortestPaths);
+        }
         printf("Current graph vertices and edges:\n");
         printf("VERTICES number:%ld.\n", aGraph.vertices.currentNum);
         printf("EDGES:\n");
