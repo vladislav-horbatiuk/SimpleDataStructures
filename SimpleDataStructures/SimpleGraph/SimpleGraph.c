@@ -209,9 +209,44 @@ double* ShortestPathUsingDijkstra(SimpleGraph *iGraph, long iSourceVertexIndex)
 	return shortestPaths;
 }
 
-double* ShortestPathUsingBellmanFord(SimpleGraph *iGraph, long iSourceVertexIndex, int *oFoundNegativeCycle)
+double* ShortestPathUsingBellmanFord(SimpleGraph *iGraph,
+		long iSourceVertexIndex, int *oFoundNegativeCycle)
 {
-	return NULL;
+	SimpleList *vertices = &iGraph->vertices;
+	SimpleList *edges = &iGraph->edges;
+	long N = vertices->currentNum;
+	long M = edges->currentNum;
+	long i,j;
+	double *result = malloc(sizeof(double) * N);
+	*oFoundNegativeCycle = 0;
+	int anyImpromevent;
+
+	for (i = 0; i < N; ++i)
+		result[i] = DBL_MAX;
+	result[iSourceVertexIndex] = 0;
+	for (i = 0; i < N; ++i)
+	{
+		anyImpromevent = 0;
+		for (j = 0; j < M; ++j)
+		{
+			tEdge *currEdge = GetElementAt(edges, j);
+			long sourceIndex = currEdge->source->vertexIndex;
+			long destIndex = currEdge->dest->vertexIndex;
+			double newPathCost = result[sourceIndex] + currEdge->cost;
+			if (result[destIndex] > newPathCost)
+			{
+				result[destIndex] = newPathCost;
+				anyImpromevent = 1;
+			}
+		}
+		if (!anyImpromevent)
+			break;
+	}
+	if (i == N - 1)
+	{
+		*oFoundNegativeCycle = 1;
+	}
+	return result;
 }
 
 double* AllPairsShortestPath(SimpleGraph *iGraph)

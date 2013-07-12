@@ -28,9 +28,11 @@ int main()
         printf("4. Find the MST of a graph from file.\n");
         printf("5. Find the shortest paths using Dijkstra algorithm\
  (works only for graphs with non-negative weights).\n");
-        printf("6. Exit.\n");
+        printf("6. Find the shortest paths using Bellman-Ford algorithm\
+(works only for graphs without negative-cost cycles).\n");
+        printf("7. Exit.\n");
         scanf("%ld", &input);
-        if (input == 6) {
+        if (input == 7) {
             break;
         }
         if (1 == input)
@@ -116,13 +118,42 @@ int main()
             }
             printf("Shortest paths starting from vertex at index %ld \
 (%lg means infinity - no path):\n", input, DBL_MAX);
-            double minPath = DBL_MAX;
             for (i = 0; i < aGraph.vertices.currentNum; ++i)
             {
                 printf("%lg ", shortestPaths[i]);
             }
             printf("\n");
             free(shortestPaths);
+            continue;
+        }
+        else if (6 == input)
+        {
+            printf("Enter starting vertex index:\n");
+            scanf("%ld", &input);
+            if (input < 0 || input > (aGraph.vertices.currentNum - 1))
+            {
+                 printf("Index out of bounds..\n");
+                 continue;
+            }
+            int negativeCycle;
+            double *shortestPaths = ShortestPathUsingBellmanFord(&aGraph, input, &negativeCycle);
+            if (!shortestPaths)
+            {
+                printf("Something went wrong during Dijkstra algorithm..\n");
+                continue;
+            }
+            if (negativeCycle)
+                printf("Found negative cycle, you can't now trust the paths.\n");
+
+            printf("Shortest paths starting from vertex at index %ld \
+(%lg means infinity - no path):\n", input, DBL_MAX);
+            for (i = 0; i < aGraph.vertices.currentNum; ++i)
+            {
+                printf("%lg ", shortestPaths[i]);
+            }
+            printf("\n");
+            free(shortestPaths);
+            continue;
         }
         printf("Current graph vertices and edges:\n");
         printf("VERTICES number:%ld.\n", aGraph.vertices.currentNum);
