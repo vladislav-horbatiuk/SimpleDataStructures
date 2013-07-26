@@ -107,32 +107,43 @@ double* ShortestPathUsingDijkstra(SimpleGraph *iGraph, long iSourceVertexIndex);
 
 /*
 	USAGE NOTES:
+	An overload of previous function, that doesn't allocate a new array for
+	storing distances, but uses the passed in pointer oDistances.
+*/
+int ShortestPathUsingDijkstra2(SimpleGraph *iGraph, 
+	long iSourceVertexIndex, double *oDistances);
+
+/*
+	USAGE NOTES:
 	Solves the single source shortest path problem for
 	a given graph without negative-cost cycles - i.e.
 	finds shortest distances to every vertex from a 
 	given source vertex. Uses Bellman-Ford algorithm,
 	thus reaching O(M*N) complexity. If graph has at
-	least one negative-cost cycle the returned values
-	aren't guaranteed to be correct, and the variable
-	oFoundNegativeCycle will be set to 1 (0 otherwise).  
+	least one negative-cost cycle NULL will be returned
+	and the variable oFoundNegativeCycle will be set to 1
+	(0 otherwise).  
 */
-double* ShortestPathUsingBellmanFord(SimpleGraph *iGraph, long iSourceVertexIndex, int *oFoundNegativeCycle);
+double* ShortestPathUsingBellmanFord(SimpleGraph *iGraph, 
+	long iSourceVertexIndex, int *oFoundNegativeCycle);
 
 /*
 	USAGE NOTES:
 	Solves the all-pairs shortest path problem for a
 	given graph using Johnson algorithm.'Solving' means:
 	a)for a graph with no negative-cost cycles the function
-	will return an NxN matrix of distances (N - number
+	must return an NxN matrix of distances (N - number
 	of vertices in the source graph),  where number at
 	indices i,j will correspond to the shortest distance 
 	between vertices i and j in the original graph. Matrix
 	is given in a row-major way - i.e. first row (N numbers)
-	followed by a second row (N numbers) and so on.
+	followed by a second row (N numbers) and so on. If some
+	memory problems occur, NULL pointer will be returned.
 	b) for a graph with at least one negative-cost cycle
-	an empty list will be returned (list head pointer==NULL).
+	an empty list will be returned (list head pointer==NULL),
+	as well as oFoundNegativeCycle variable will be set to 1.
 */
-double* AllPairsShortestPath(SimpleGraph *iGraph);
+double* AllPairsShortestPath(SimpleGraph *iGraph, int *oFoundNegativeCycle);
 
 int DisposeGraphWithVerticesData(SimpleGraph*);
 

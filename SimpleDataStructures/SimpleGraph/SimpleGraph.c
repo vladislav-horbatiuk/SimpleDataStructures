@@ -75,6 +75,12 @@ static void _DijkstraUpdateFunc(tEdge* iEdge)
 	iEdge->dest->_pathLength = _pathLength(iEdge);
 }
 
+static inline void _resetPrivateFields(tVertex *oVertex)
+{
+	oVertex->_heapIndex = oVertex->_prevVertexInd = UNSET_VALUE;
+	oVertex->_edgeCost = oVertex->_pathLength = DBL_MAX;
+}
+
 int InitGraph(SimpleGraph *oGraph, long iVerticesNum, long iEdgesNum)
 {
 	int res = InitList(&oGraph->vertices, iVerticesNum);
@@ -90,8 +96,7 @@ int AddVertexWithData(SimpleGraph *oGraph,void *iData, long iEdgesNum)
 	if (!newVertex)
 		return MALLOC_ERROR;
 	newVertex->data = iData;
-	newVertex->_heapIndex = newVertex->_prevVertexInd = UNSET_VALUE;
-	newVertex->_edgeCost = newVertex->_pathLength = DBL_MAX;
+	_resetPrivateFields(newVertex);
 
 	if (InitList(&newVertex->edges, iEdgesNum))
 		return MALLOC_ERROR;
@@ -195,6 +200,13 @@ double* ShortestPathUsingDijkstra(SimpleGraph *iGraph, long iSourceVertexIndex)
 	if (shortestPaths == NULL)
 		return NULL;
 
+	ShortestPathUsingDijkstra2(iGraph, iSourceVertexIndex, shortestPaths);
+	return shortestPaths;
+}
+
+int ShortestPathUsingDijkstra2(SimpleGraph *iGraph, 
+	long iSourceVertexIndex, double *oDistances)
+{
 	SimpleGraph shortestPathGraph;
 	_GreedyCriterionSearch(iGraph, iSourceVertexIndex, &_pathLengthCriterion,
 						&_DijkstraUpdateFunc, &shortestPathGraph);
@@ -203,10 +215,12 @@ double* ShortestPathUsingDijkstra(SimpleGraph *iGraph, long iSourceVertexIndex)
 	for (i = 0; i < shortestPathGraph.vertices.currentNum; ++i)
 	{
 		tVertex *currentVertex = GetElementAt(&shortestPathGraph.vertices, i);
-		shortestPaths[currentVertex->vertexIndex] = currentVertex->_pathLength;
+		oDistances[currentVertex->vertexIndex] = currentVertex->_pathLength;
 		currentVertex->vertexIndex = i;
 	}
-	return shortestPaths;
+    /* TODO: For now we just destroy it - consider somehow returning this backbone. */
+    DisposeGraphMemoryOnly(&shortestPathGraph);
+	return 0;
 }
 
 double* ShortestPathUsingBellmanFord(SimpleGraph *iGraph,
@@ -218,6 +232,9 @@ double* ShortestPathUsingBellmanFord(SimpleGraph *iGraph,
 	long M = edges->currentNum;
 	long i,j;
 	double *result = malloc(sizeof(double) * N);
+	if (!result)
+		return NULL;
+
 	*oFoundNegativeCycle = 0;
 	int anyImpromevent;
 
@@ -242,16 +259,91 @@ double* ShortestPathUsingBellmanFord(SimpleGraph *iGraph,
 		if (!anyImpromevent)
 			break;
 	}
-	if (i == N - 1)
+	if (i == N)
 	{
 		*oFoundNegativeCycle = 1;
+		free(result);
+		result = NULL;
 	}
 	return result;
 }
 
-double* AllPairsShortestPath(SimpleGraph *iGraph)
+double* AllPairsShortestPath(SimpleGraph *iGraph, int *oFoundNegativeCycle)
 {
-	return NULL;
+	SimpleList *vertices = &iGraph->vertices;
+	SimpleList *edges = &iGraph->edges;
+	long N = vertices->currentNum;
+	long M = edges->currentNum;
+	*oFoundNegativeCycle = 0;
+	double *result = malloc(sizeof(double) * N * N);
+	if (!result)
+		return NULL;
+
+	long i,j;
+	/* Step 1: Add fictitious vertex s to the graph. */
+	AddVertexWithData(iGraph, NULL, N);
+	/* Step 2: Connect it with every other vertex using an edge with 0 cost.*/
+	for (i = 0; i < N; ++i)
+	{
+		AddEdge(iGraph, N, i, 0);
+	}
+	/* Step 3: Run Bellman-Ford algorithm to get shortest-paths distances from
+	 * new fictitious vertex to every other vertex.
+	 */
+	double *distances = ShortestPathUsingBellmanFord(iGraph, 
+	 									N, oFoundNegativeCycle);
+	if (*oFoundNegativeCycle)
+	{
+		free(result);
+		result = NULL;
+		goto END;
+	}
+	/* Step 4: Update a cost of every edge in the source graph based on
+	 * distances, computed during the previous step.
+	 */
+	for (i = 0; i < M; ++i)
+	{
+		tEdge* currEdge = GetElementAt(edges, i);
+		long sourceIndex = currEdge->source->vertexIndex;
+		long destIndex = currEdge->dest->vertexIndex;
+		currEdge->cost += distances[sourceIndex] - distances[destIndex];
+	}
+	/* Step 5: Run Dijkstra's algo N times, in order to get shortest paths
+	 * distances between every pair of vertices. Previously, we need to delete
+	 * fictitious vertex and its edges as well.
+	 */
+END:
+	;
+	tVertex *fictitiousVertex = PopAt(vertices, N);
+	_freeVertexOnly(fictitiousVertex);
+
+	for (i = M + N - 1; i >= M; --i)
+	{
+		tEdge *addedEdge = PopAt(edges, i);
+		free(addedEdge);
+	}
+	if (!result)
+		/* We are here because of some error - so just return NULL. */
+		return result;
+
+	for (i = 0; i < N; ++i)
+	{
+		ShortestPathUsingDijkstra2(iGraph, i, result + i * N);
+	}
+	/* Restore original cost for every edge. */
+	for (i = 0; i < M; ++i)
+	{
+		tEdge *currEdge = GetElementAt(edges, i);
+		long sourceIndex = currEdge->source->vertexIndex;
+		long destIndex = currEdge->dest->vertexIndex;
+		currEdge->cost -= distances[sourceIndex] - distances[destIndex];
+	}
+	/* Restore the actual shortest paths values. */
+	for (i = 0; i < N; ++i)
+		for (j = 0; j < N; ++j)
+			result[i*N+j] -= distances[i] - distances[j];
+
+	return result;
 }
 
 static inline double _GreedyCriterionSearch(SimpleGraph *iGraph,long iStartInd,
@@ -266,7 +358,6 @@ static inline double _GreedyCriterionSearch(SimpleGraph *iGraph,long iStartInd,
 
 	SimpleHeap verticesRest;
 	_fillHeapWithVertices(vertices, &verticesRest, iStartInd);
-
 	/* Hack, since this routine is supposed to be general, while _pathLength
 	 * internal field is used only by Dijkstra algorithm. But this is the
 	 * easiest way to make it work for now.
@@ -279,6 +370,12 @@ static inline double _GreedyCriterionSearch(SimpleGraph *iGraph,long iStartInd,
 		_addNewVertexToFrontier(&verticesRest, criterion, updateFunc, oGraph);
 	} while (verticesRest.elements.currentNum);
 	DisposeHeapWithElements(&verticesRest);
+	/* Reset private fields (to defaults) for every vertex. */
+	for (i = 0; i < vertNum; ++i)
+	{
+		_resetPrivateFields(GetElementAt(vertices, i));
+	}
+
 	return result;
 }
 

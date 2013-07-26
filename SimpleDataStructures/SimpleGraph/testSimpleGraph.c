@@ -14,7 +14,7 @@ int main()
 {
     SimpleGraph aGraph;
     SimpleList elements;
-    long input, i, source, dest;
+    long input, i, source, dest, j;
     double cost;
     long *element;
     char strInp[256];
@@ -22,17 +22,21 @@ int main()
     tEdge *currEdge;
     InitGraph(&aGraph, 10, 10);
     while (1) {
+        printf("0. Start new graph (clear existing one).\n");
         printf("1. Add vertex.\n");
         printf("2. Add edge.\n");
         printf("3. Get incident edges for vertex.\n");
-        printf("4. Find the MST of a graph from file.\n");
-        printf("5. Find the shortest paths using Dijkstra algorithm\
+        printf("4. Read graph from file.\n");
+        printf("5. Find the MST of a graph.\n");
+        printf("6. Find the shortest paths using Dijkstra algorithm\
  (works only for graphs with non-negative weights).\n");
-        printf("6. Find the shortest paths using Bellman-Ford algorithm\
+        printf("7. Find the shortest paths using Bellman-Ford algorithm\
 (works only for graphs without negative-cost cycles).\n");
-        printf("7. Exit.\n");
+        printf("8. Find the all-pair shortest paths using Johnson's algorithm\
+(works only for graphs without negative-cost cycles).\n");
+        printf("9. Exit.\n");
         scanf("%ld", &input);
-        if (input == 7) {
+        if (input == 9) {
             break;
         }
         if (1 == input)
@@ -83,25 +87,31 @@ int main()
         {
             printf("Enter file name:\n");
             scanf("%s", strInp);
-            SimpleGraph fileGraph;
-            if (ReadGraphFromFile(strInp, &fileGraph, UNDIRECTIONAL))
+            printf("Directional (1) or undirectional (0):\n");
+            scanf("%ld", &input);
+            SimpleGraph tmp;
+            if (ReadGraphFromFile(strInp, &tmp, 
+                (input == 1 ? DIRECTIONAL : UNDIRECTIONAL)))
             { printf("Incorrect file name.\n"); continue; }
-
+            DisposeGraphWithVerticesData(&aGraph);
+            aGraph = tmp;
+        }
+        else if (5 == input)
+        {
             SimpleGraph MST;
-            double result = MinimumSpanningTree(&fileGraph, &MST);
+            double result = MinimumSpanningTree(&aGraph, &MST);
             printf("MST EDGES:\n");
-            elements = fileGraph.edges;
+            elements = aGraph.edges;
             for (i = 0; i < elements.currentNum; ++i)
             {   
                 currEdge = EDGE_PTR(GetElementAt(&elements, i));
                 PrintEdgeInfo(currEdge);
             }
-            printf("The total sum of edges cost in MST:%lg\n", result);
-            DisposeGraphWithVerticesData(&fileGraph);
+            printf("The total sum of edges cost in MST:%lf\n", result);
             DisposeGraphMemoryOnly(&MST);
             continue;
         }
-        else if (5 == input)
+        else if (6 == input)
         {
             printf("Enter starting vertex index:\n");
             scanf("%ld", &input);
@@ -126,7 +136,7 @@ int main()
             free(shortestPaths);
             continue;
         }
-        else if (6 == input)
+        else if (7 == input)
         {
             printf("Enter starting vertex index:\n");
             scanf("%ld", &input);
@@ -152,6 +162,36 @@ int main()
                 printf("%lg ", shortestPaths[i]);
             }
             printf("\n");
+            free(shortestPaths);
+            continue;
+        }
+        else if (8 == input)
+        {
+            int negativeCycle;
+            double *shortestPaths = AllPairsShortestPath(&aGraph, &negativeCycle);
+            if (!shortestPaths)
+            {
+                if (negativeCycle)
+                    printf("Found negative cycle.\n");
+                else
+                    printf("Something went wrong during algorithm's execution..\n");
+                continue;
+            }
+            double minDistance = DBL_MAX, currDistance;
+            for (i = 0; i < aGraph.vertices.currentNum; ++i)
+            {
+                printf("Shortest distances from vertex %ld\
+ (%lg means infinity - no path):\n", i, DBL_MAX);
+                for (j = 0; j < aGraph.vertices.currentNum; ++j)
+                {
+                    currDistance = shortestPaths[i*aGraph.vertices.currentNum+j];
+                    if (currDistance < minDistance)
+                     minDistance = currDistance;
+                    printf("%lg ", currDistance);
+                }
+                printf("\n");
+            }
+            printf("SHORTEST DISTANCE IN WHOLE GRAPH:%lf.\n", minDistance);
             free(shortestPaths);
             continue;
         }
